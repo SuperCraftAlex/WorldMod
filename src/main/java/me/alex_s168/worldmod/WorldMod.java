@@ -270,12 +270,14 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                     p.sendMessage("Not enough selections to combine (needs 2)");
                     return true;
                 }
-                List<SelectionPart> a = sels.pop().parts();
-                List<SelectionPart> b = sels.pop().parts();
+                Selection sa = sels.pop();
+                Selection sb = sels.pop();
+                List<SelectionPart> a = sa.parts();
+                List<SelectionPart> b = sb.parts();
                 List<SelectionPart> parts = new ArrayList<>(a.size() + b.size());
                 parts.addAll(a);
                 parts.addAll(b);
-                sels.push(new Selection(a.size() + b.size(), parts));
+                sels.push(new Selection(sa.size() + sb.size(), parts));
                 p.sendMessage("Combined selections");
                 return true;
             }
