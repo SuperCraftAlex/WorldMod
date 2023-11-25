@@ -1,0 +1,15 @@
+name: WorldMod
+version: '${version}'
+main: me.alex_s168.worldmod.WorldMod
+api-version: '1.20'
+
+permissions:
+  WorldMod.wm:
+    description: a
+    default: op
+
+commands:
+  wm:
+    description: a
+    usage: /wm <sel|set>
+    permission: WorldMod.wm
