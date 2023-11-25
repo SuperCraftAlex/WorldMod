@@ -3,11 +3,9 @@ package me.alex_s168.worldmod.tasks;
 import me.alex_s168.worldmod.pattern.BlockPattern;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.magicwerk.brownies.collections.GapList;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.*;
 
 public class FloodFillTask implements Runnable {
 
@@ -15,7 +13,7 @@ public class FloodFillTask implements Runnable {
     private final int x, y, z;
     private final Callback callback;
     private final BlockPattern pattern;
-    private final Collection<Location> blocks = new ArrayList<>();
+    private final Collection<Location> blocks = new HashSet<>();
     private final boolean diagonals;
 
     public interface Callback {
@@ -44,7 +42,7 @@ public class FloodFillTask implements Runnable {
 
     @Override
     public void run() {
-        Queue<Location> queue = new LinkedBlockingQueue<>();
+        Queue<Location> queue = new GapList<>();
         queue.add(new Location(world, x, y, z));
         while (!queue.isEmpty()) {
             Location loc = queue.poll();
@@ -56,26 +54,30 @@ public class FloodFillTask implements Runnable {
             }
             blocks.add(loc);
 
-            queue.add(loc.clone().add(1, 0, 0));
-            queue.add(loc.clone().add(-1, 0, 0));
-            queue.add(loc.clone().add(0, 1, 0));
-            queue.add(loc.clone().add(0, -1, 0));
-            queue.add(loc.clone().add(0, 0, 1));
-            queue.add(loc.clone().add(0, 0, -1));
+            final int x = loc.getBlockX();
+            final int y = loc.getBlockY();
+            final int z = loc.getBlockZ();
+
+            queue.add(new Location(world, x+1, y, z));
+            queue.add(new Location(world, x-1,y, z));
+            queue.add(new Location(world, x, y+1, z));
+            queue.add(new Location(world, x, y-1, z));
+            queue.add(new Location(world, x, y, z+1));
+            queue.add(new Location(world, x, y, z-1));
 
             if (diagonals) {
-                queue.add(loc.clone().add(1, 1, 0));
-                queue.add(loc.clone().add(-1, 1, 0));
-                queue.add(loc.clone().add(1, -1, 0));
-                queue.add(loc.clone().add(-1, -1, 0));
-                queue.add(loc.clone().add(1, 0, 1));
-                queue.add(loc.clone().add(-1, 0, 1));
-                queue.add(loc.clone().add(1, 0, -1));
-                queue.add(loc.clone().add(-1, 0, -1));
-                queue.add(loc.clone().add(0, 1, 1));
-                queue.add(loc.clone().add(0, -1, 1));
-                queue.add(loc.clone().add(0, 1, -1));
-                queue.add(loc.clone().add(0, -1, -1));
+                queue.add(new Location(world, x+1, y+1, 0));
+                queue.add(new Location(world, x-1, y+1, 0));
+                queue.add(new Location(world, x+1, y-1, 0));
+                queue.add(new Location(world, x-1, y-1, 0));
+                queue.add(new Location(world, x+1, 0, z+1));
+                queue.add(new Location(world, x-1, 0, z+1));
+                queue.add(new Location(world, x+1, 0, z-1));
+                queue.add(new Location(world, x-1, 0, z-1));
+                queue.add(new Location(world, 0, y+1, z+1));
+                queue.add(new Location(world, 0, y-1, z+1));
+                queue.add(new Location(world, 0, y+1, z-1));
+                queue.add(new Location(world, 0, y-1, z-1));
             }
         }
         callback.done(blocks);

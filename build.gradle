@@ -1,6 +1,7 @@
 plugins {
     id "java"
     id "me.tagavari.nmsremap" version "1.0.0"
+    id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
 group = "me.alex_s168"
@@ -23,6 +24,8 @@ dependencies {
     compileOnly "org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT"
 
     compileOnly "org.spigotmc:spigot:1.20.1-R0.1-SNAPSHOT:remapped-mojang"
+
+    implementation "org.magicwerk.brownies:brownies-collections:0.9.21"
 }
 
 def targetJavaVersion = 17
@@ -77,7 +80,7 @@ tasks.register("cleanSpigot") {
 }
 
 tasks.register("buildSpigot") {
-    dependsOn "getBuildTools"
+    dependsOn getBuildTools
     doFirst {
         if (file("BuildTools-out").exists()) {
             System.err.println("Already built Spigot, skipping. If this is a mistake, run the cleanSpigot task.")
@@ -102,7 +105,7 @@ def runDir = file("run")
 def serverJar = file("BuildTools-out/spigot-1.20.1.jar")
 
 tasks.register("prepareRunServer") {
-    dependsOn "remap"
+    dependsOn build
     doLast {
         if (!file("BuildTools-out/spigot-1.20.1.jar").exists()) {
             throw new GradleException("Spigot jar not found. Run the buildSpigot task first.")
@@ -117,15 +120,19 @@ tasks.register("prepareRunServer") {
         eula.write("eula=true\n")
         def pluginDir = new File(runDir, "plugins")
         pluginDir.mkdir()
-        copy {
-            from "build/libs"
-            into pluginDir
+        file("build/libs").listFiles().each { file ->
+            if (file.path.endsWith("-all.jar")) {
+                copy {
+                    from file
+                    into pluginDir
+                }
+            }
         }
     }
 }
 
 tasks.register("runServer") {
-    dependsOn "prepareRunServer"
+    dependsOn prepareRunServer
     doLast {
         def res = exec {
             commandLine 'java', "-jar", serverJar.absolutePath, "-nogui"
@@ -138,3 +145,6 @@ tasks.register("runServer") {
 }
 
 compileJava.dependsOn(buildSpigot)
+
+assemble.dependsOn(shadowJar)
+shadowJar.dependsOn(jar)

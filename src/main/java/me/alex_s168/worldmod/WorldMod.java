@@ -88,15 +88,35 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
         Stack<Selection> sels = selections.get(p.getName());
 
         if (args[0].equals("cancel")) {
-            for (Thread t : th) {
-                t.interrupt();
+            if (args.length != 2) {
+                p.sendMessage("Usage: /wm cancel <<task>|all>");
+                return true;
             }
-            th.clear();
-            p.sendMessage("Cancelled all tasks");
+            if (args[1].equals("all")) {
+                for (Thread t : th) {
+                    t.interrupt();
+                }
+                th.clear();
+                p.sendMessage("Cancelled all tasks");
+                return true;
+            }
+            for (Thread t : th) {
+                if (t.getName().equals(args[1])) {
+                    t.interrupt();
+                    th.remove(t);
+                    p.sendMessage("Cancelled task: " + t.getName());
+                    return true;
+                }
+            }
+            p.sendMessage("No such task: " + args[1]);
             return true;
         }
 
         if (args[0].equals("list")) {
+            if (th.isEmpty()) {
+                p.sendMessage("No tasks running");
+                return true;
+            }
             for (Thread t : th) {
                 p.sendMessage("Task: " + t.getName());
             }
