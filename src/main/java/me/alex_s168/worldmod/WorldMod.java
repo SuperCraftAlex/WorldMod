@@ -1,7 +1,9 @@
 package me.alex_s168.worldmod;
 
+import me.alex_s168.worldmod.exc.InvalidPatternException;
 import me.alex_s168.worldmod.pattern.BlockPattern;
 import me.alex_s168.worldmod.selection.*;
+import me.alex_s168.worldmod.tasks.FilteringTask;
 import me.alex_s168.worldmod.tasks.FloodFillTask;
 import me.alex_s168.worldmod.tasks.SetTask;
 import org.bukkit.Location;
@@ -94,8 +96,14 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equals("sel") || args[0].equals("select") || args[0].equals("selection")) {
+        if (args[0].equals("list")) {
+            for (Thread t : th) {
+                p.sendMessage("Task: " + t.getName());
+            }
+            return true;
+        }
 
+        if (args[0].equals("sel") || args[0].equals("select") || args[0].equals("selection")) {
 
             if (args.length == 1 || args[1].equals("list")) {
                 p.sendMessage("BOTTOM");
@@ -121,7 +129,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                     return true;
                 }
                 p.sendMessage("Usage: /wm sel clear all");
-                return false;
+                return true;
             }
 
             if (args[1].equals("clone")) {
@@ -151,7 +159,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 if (args.length == 2) {
                     p.sendMessage("Usage: /wm sel add <type> [args...]");
                     p.sendMessage("Types: box, single, flood");
-                    return false;
+                    return true;
                 }
 
                 String type = args[2];
@@ -159,7 +167,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 if (type.equals("box")) {
                     if (args.length != 9) {
                         p.sendMessage("Usage: /wm sel add box <x1> <y1> <z1> <x2> <y2> <z2>");
-                        return false;
+                        return true;
                     }
                     int x1 = parseLoc(p.getLocation().getBlockX(), args[3]);
                     int y1 = parseLoc(p.getLocation().getBlockY(), args[4]);
@@ -180,7 +188,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 if (type.equals("single")) {
                     if (args.length != 6) {
                         p.sendMessage("Usage: /wm sel add single <x> <y> <z>");
-                        return false;
+                        return true;
                     }
                     int x = parseLoc(p.getLocation().getBlockX(), args[3]);
                     int y = parseLoc(p.getLocation().getBlockY(), args[4]);
@@ -195,13 +203,19 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 if (type.equals("flood")) {
                     if (args.length != 7) {
                         p.sendMessage("Usage: /wm sel add flood <x> <y> <z> <blocks>");
-                        return false;
+                        return true;
                     }
                     int x = parseLoc(p.getLocation().getBlockX(), args[3]);
                     int y = parseLoc(p.getLocation().getBlockY(), args[4]);
                     int z = parseLoc(p.getLocation().getBlockZ(), args[5]);
                     String blocks = args[6];
-                    BlockPattern pattern = BlockPattern.parse(blocks);
+                    BlockPattern pattern;
+                    try {
+                        pattern = BlockPattern.parse(blocks);
+                    } catch (InvalidPatternException e) {
+                        p.sendMessage(e.getMessage());
+                        return true;
+                    }
 
                     Runnable task = new FloodFillTask(
                             p.getWorld(),
@@ -236,10 +250,12 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                     p.sendMessage("Not enough selections to combine (needs 2)");
                     return true;
                 }
-                Selection a = sels.pop();
-                Selection b = sels.pop();
-                a.parts().addAll(b.parts());
-                sels.push(new Selection(a.size() + b.size(), a.parts()));
+                List<SelectionPart> a = sels.pop().parts();
+                List<SelectionPart> b = sels.pop().parts();
+                List<SelectionPart> parts = new ArrayList<>(a.size() + b.size());
+                parts.addAll(a);
+                parts.addAll(b);
+                sels.push(new Selection(a.size() + b.size(), parts));
                 p.sendMessage("Combined selections");
                 return true;
             }
@@ -252,7 +268,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 if (args.length == 2) {
                     p.sendMessage("Usage: /wm sel move <type>");
                     p.sendMessage("Types: relative, facing");
-                    return false;
+                    return true;
                 }
 
                 String type = args[2];
@@ -260,7 +276,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 if (type.equals("relative")) {
                     if (args.length != 6) {
                         p.sendMessage("Usage: /wm sel move pos <x> <y> <z>");
-                        return false;
+                        return true;
                     }
                     int x = Integer.parseInt(args[3]);
                     int y = Integer.parseInt(args[4]);
@@ -275,7 +291,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 if (type.equals("facing")) {
                     if (args.length != 4) {
                         p.sendMessage("Usage: /wm sel move facing <blocks>");
-                        return false;
+                        return true;
                     }
 
                     float blocks = Float.parseFloat(args[3]);
@@ -309,22 +325,65 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                 p.sendMessage("Available types: relative, facing");
             }
 
+            if (args[1].equals("filter")) {
+                if (sels.isEmpty()) {
+                    p.sendMessage("No selections to filter");
+                    return true;
+                }
+                if (args.length == 2) {
+                    p.sendMessage("Usage: /wm sel filter <blocks>");
+                    return true;
+                }
+                String blocks = args[2];
+                BlockPattern pattern;
+                try {
+                    pattern = BlockPattern.parse(blocks);
+                } catch (InvalidPatternException e) {
+                    p.sendMessage(e.getMessage());
+                    return true;
+                }
+                Selection sel = sels.pop();
+                Runnable task = new FilteringTask(
+                        sel,
+                        p.getWorld(),
+                        pattern,
+                        (x) -> {
+                            sels.push(new Selection(x.size(), List.of(
+                                    new BlockListSelection(x)
+                            )));
+                            p.sendMessage("Filter task complete");
+                            th.remove(Thread.currentThread());
+                        }
+                );
+                Thread t = new Thread(task);
+                th.add(t);
+                t.start();
+                p.sendMessage("Started filter task");
+                return true;
+            }
+
             p.sendMessage("Unknown selection command: " + args[1]);
-            p.sendMessage("Available commands: remove, clear, clone, swap, add, list, move");
-            return false;
+            p.sendMessage("Available commands: remove, clear, clone, swap, add, list, combine, move, filter");
+            return true;
         }
 
         if (args[0].equals("set")) {
             if (args.length == 1) {
                 p.sendMessage("Usage: /wm set <block>");
-                return false;
+                return true;
             }
             if (sels.isEmpty()) {
                 p.sendMessage("No selections to set");
                 return true;
             }
             String block = args[1];
-            BlockPattern pattern = BlockPattern.parse(block);
+            BlockPattern pattern;
+            try {
+                pattern = BlockPattern.parse(block);
+            } catch (InvalidPatternException e) {
+                p.sendMessage(e.getMessage());
+                return true;
+            }
             Runnable task = new SetTask(
                     sels.pop(),
                     p.getWorld(),

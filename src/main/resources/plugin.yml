@@ -11,5 +11,5 @@ permissions:
 commands:
   wm:
     description: a
-    usage: /wm <sel|set>
+    usage: /wm <sel|set|list|cancel>
     permission: WorldMod.wm
