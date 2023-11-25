@@ -3,7 +3,6 @@ package me.alex_s168.worldmod.tasks;
 import me.alex_s168.worldmod.pattern.BlockPattern;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.Collection;
