@@ -195,7 +195,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
                     int x2 = parseLoc(p.getLocation().getBlockX(), args[6]);
                     int y2 = parseLoc(p.getLocation().getBlockY(), args[7]);
                     int z2 = parseLoc(p.getLocation().getBlockZ(), args[8]);
-                    int size = (x2 - x1 + 1) * (y2 - y1 + 1) * (z2 - z1 + 1);
+                    int size = Math.abs((x2 - x1 + 1) * (y2 - y1 + 1) * (z2 - z1 + 1));
                     Location min = new Location(p.getWorld(), Math.min(x1, x2), Math.min(y1, y2), Math.min(z1, z2));
                     Location max = new Location(p.getWorld(), Math.max(x1, x2), Math.max(y1, y2), Math.max(z1, z2));
                     List<SelectionPart> parts = new ArrayList<>();
