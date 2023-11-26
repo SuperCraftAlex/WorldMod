@@ -262,7 +262,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
 
                 p.sendMessage("Unknown selection type: " + type);
                 p.sendMessage("Available types: box, single, flood");
-                return false;
+                return true;
             }
 
             if (args[1].equals("combine")) {
