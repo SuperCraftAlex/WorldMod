@@ -297,7 +297,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
 
                 if (type.equals("relative")) {
                     if (args.length != 6) {
-                        p.sendMessage("Usage: /wm sel move pos <x> <y> <z>");
+                        p.sendMessage("Usage: /wm sel move relative <x> <y> <z>");
                         return true;
                     }
                     int x = Integer.parseInt(args[3]);
