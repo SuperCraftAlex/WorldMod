@@ -385,7 +385,7 @@ public final class WorldMod extends JavaPlugin implements CommandExecutor {
             }
 
             p.sendMessage("Unknown selection command: " + args[1]);
-            p.sendMessage("Available commands: remove, clear, clone, swap, add, list, combine, move, filter");
+            p.sendMessage("Available commands: remove, clear, clone, swap, add, list, combine, move, filter, rotate");
             return true;
         }
 
